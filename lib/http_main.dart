@@ -21,18 +21,38 @@ class HttpApp extends StatefulWidget {
 class _HttpApp extends State<HttpApp> {
   String result = '';
   List? data;
+  TextEditingController? _editingController;
+  ScrollController? _scrollController;
+  int page = 1;
 
   @override
   void initState() {
     super.initState();
     data = new List.empty(growable: true);
+    _editingController = new TextEditingController();
+    _scrollController = new ScrollController();
+
+    _scrollController!.addListener(() {
+      if (_scrollController!.offset >=
+      _scrollController!.position.maxScrollExtent &&
+      !_scrollController!.position.outOfRange) {
+        print('bottom');
+        page++;
+        getJSONData();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Http Example'),
+        title: TextField(
+          controller: _editingController,
+          style: TextStyle(color: Colors.white),
+          keyboardType: TextInputType.text,
+          decoration: InputDecoration(hintText: '검색어를 입력하세요'),
+        ),
       ),
       body: Center(
         child: Center(
@@ -76,11 +96,14 @@ class _HttpApp extends State<HttpApp> {
                       ),
                     ));
                   },
-                  itemCount: data!.length),
+                  itemCount: data!.length,
+                  controller: _scrollController,),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          page = 1;
+          data!.clear();
           getJSONData();
         },
         child: const Icon(Icons.file_download),
@@ -89,9 +112,10 @@ class _HttpApp extends State<HttpApp> {
   }
 
   Future<String> getJSONData() async {
-    var url = 'https://dapi.kakao.com/v3/search/book?target=title&query=doit';
+    var url = 'https://dapi.kakao.com/v3/search/book?'
+              'target=title&page=$page&query=${_editingController!.value.text}';
     var response = await http.get(Uri.parse(url),
-        headers: {"Authorization": "KakaoAK 177d7893d12932c39b96f81d4615ce66"});
+        headers: {"Authorization": "KakaoAK ##REST API주소 입력##"});
     setState(() {
       var dataConvertedToJSON = json.decode(response.body);
       List result = dataConvertedToJSON['documents'];
